@@ -1,5 +1,5 @@
 import React from "react";
-
+import { Link } from "react-router-dom";
 function HeroSection() {
   return (
     <div className="container-fluid bg-dark text-white py-5">
@@ -13,7 +13,10 @@ function HeroSection() {
             and vital assistance to law enforcement and hospitals.
           </p>
           <div className="d-flex justify-content-center justify-content-lg-start gap-3">
-            <button className="btn btn-danger">Register a dead body</button>
+            <Link to="/register" className="btn btn-danger">
+                Register a dead body
+            </Link>
+
             <button className="btn btn-danger">Search for a dead body</button>
           </div>
         </div>
