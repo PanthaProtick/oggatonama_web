@@ -1,14 +1,16 @@
 import React from "react";
+import { Link, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 function Navbar() {
+  const location = useLocation();
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-maroon">
       <div className="container">
-        <a className="navbar-brand fw-bold" href="/">
+        <Link className="navbar-brand fw-bold" to="/">
           Oggatonama
-        </a>
+        </Link>
         <button
           className="navbar-toggler"
           type="button"
@@ -20,29 +22,43 @@ function Navbar() {
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto">
             <li className="nav-item">
-              <a className="nav-link active" href="#">
+              <Link
+                className={`nav-link ${location.pathname === "/" ? "active" : ""}`}
+                to="/"
+              >
                 Home
-              </a>
+              </Link>
             </li>
             <li className="nav-item">
-              <a className="nav-link" href="#">
+              <Link
+                className={`nav-link ${location.pathname === "/register" ? "active" : ""}`}
+                to="/register"
+              >
                 Register
-              </a>
+              </Link>
             </li>
             <li className="nav-item">
-              <a className="nav-link" href="#">
+              <Link
+                className={`nav-link ${location.pathname === "/search" ? "active" : ""}`}
+                to="/search"
+              >
                 Search
-              </a>
+              </Link>
             </li>
             <li className="nav-item">
-              <a className="nav-link" href="#">
+              <Link
+                className={`nav-link ${location.pathname === "/profile" ? "active" : ""}`}
+                to="/profile"
+              >
                 Profile
-              </a>
+              </Link>
             </li>
           </ul>
-          <button className="btn btn-outline-light rounded-circle ms-3 d-none d-lg-block">
-            <i className="bi bi-person"></i>
-          </button>
+          <Link to="/profile" className="d-none d-lg-block">
+            <button className="btn btn-outline-light rounded-circle ms-3">
+              <i className="bi bi-person"></i>
+            </button>
+          </Link>
         </div>
       </div>
     </nav>

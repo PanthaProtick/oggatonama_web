@@ -1,0 +1,50 @@
+.profile-page {
+  background-color: #111;
+  min-height: 100vh;
+  color: #fff;
+}
+
+.profile-title {
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  letter-spacing: 2px;
+}
+
+.profile-divider {
+  border-color: #444;
+  margin-bottom: 2rem;
+}
+
+.profile-card {
+  background-color: #1c1c1c;
+  color: #fff;
+  border-radius: 20px;
+  max-width: 400px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 0 20px rgba(0, 0, 0, 0.3),
+    0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #555;
+  margin: 0 auto;
+}
+
+.profile-username {
+  font-weight: bold;
+}
+
+.profile-email,
+.profile-member {
+  color: #bbb;
+  margin: 0.2rem 0;
+}
+
+.profile-btn {
+  border-radius: 30px;
+  margin-top: 1rem;
+}
