@@ -1,12 +1,16 @@
 import React from "react";
+import Navbar from "../components/Navbar";
+import "./css/RegisterBody.css";
 
 function RegisterBody() {
   return (
-    <div className="container my-5">
-      <h2 className="mb-4">Register a Dead Body</h2>
+    <div className="register-page">
+      <Navbar />
+      <div className="container py-5">
+        <h1 className="text-center text-light mb-4 register-title">Register a Dead Body</h1>
+        <hr className="register-divider mb-4" />
 
-      <div className="card shadow-sm">
-        <div className="card-body">
+        <div className="card register-card mx-auto">
           <form>
             <div className="mb-3">
               <label className="form-label">Found Location</label>

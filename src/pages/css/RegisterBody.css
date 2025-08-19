@@ -1,0 +1,89 @@
+.register-page {
+  background-color: #111;
+  min-height: 100vh;
+  color: #fff;
+  padding-bottom: 3rem;
+}
+
+.register-title {
+  font-weight: bold;
+  letter-spacing: 2px;
+  font-size: 2.5rem;
+  margin: 2rem 0;
+  padding-top: 1rem;
+}
+
+.register-divider {
+  border-color: #444;
+  opacity: 0.5;
+  width: 50%;
+  margin: 2rem auto 3rem;
+}
+
+.register-card {
+  background-color: #1c1c1c;
+  color: #fff;
+  border-radius: 20px;
+  max-width: 800px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 0 20px rgba(0, 0, 0, 0.3),
+    0 0 2px rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+}
+
+.register-card .form-control,
+.register-card .form-select {
+  background-color: #2a2a2a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+.register-card .form-control::placeholder {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.register-card .form-control:focus,
+.register-card .form-select:focus {
+  background-color: #333;
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.register-card .form-label {
+  color: #ddd;
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.register-card .form-group {
+  margin-bottom: 2rem;
+}
+
+.register-card .btn-danger {
+  background-color: #6a1a1a;
+  border: none;
+  padding: 1rem 3rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  margin-top: 1.5rem;
+  min-width: 200px;
+}
+
+.register-card .btn-danger:hover:not(:disabled) {
+  background-color: #8a2424;
+  transform: translateY(-2px);
+}
+
+.register-card .btn-danger:disabled {
+  background-color: #4a1414;
+  opacity: 0.7;
+}
