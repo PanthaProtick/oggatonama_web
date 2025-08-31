@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import "./css/RegisterBody.css";
@@ -30,6 +29,10 @@ function RegisterBody() {
     setLoading(true);
     setSuccess("");
     setError("");
+    
+    console.log('Form data before submission:', form);
+    console.log('Photo selected:', photo);
+    
     try {
       const formData = new FormData();
       Object.entries(form).forEach(([key, value]) => {
@@ -37,20 +40,31 @@ function RegisterBody() {
       });
       if (photo) formData.append("photo", photo);
 
-      const res = await fetch("/api/register", {
+      console.log('Making request to http://localhost:5000/api/register...');
+      
+      const res = await fetch("http://localhost:5000/api/register", {
         method: "POST",
         body: formData,
       });
+      
+      console.log('Response status:', res.status);
+      console.log('Response OK:', res.ok);
+      
       if (res.ok) {
         setSuccess("Registration successful!");
         setForm({ foundLocation: "", age: "", gender: "", height: "", clothing: "" });
         setPhoto(null);
+        // Reset the file input
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) fileInput.value = '';
       } else {
         const data = await res.json();
+        console.log('Error response:', data);
         setError(data.error || "Registration failed");
       }
     } catch (err) {
-      setError("Network error");
+      console.error('Network error:', err);
+      setError("Network error: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -101,9 +115,9 @@ function RegisterBody() {
                 required
               >
                 <option value="">Select gender</option>
-                <option>Male</option>
-                <option>Female</option>
-                <option>Other / Prefer not to say</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other / Prefer not to say</option>
               </select>
             </div>
 
