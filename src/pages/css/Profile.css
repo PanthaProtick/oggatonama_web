@@ -1,50 +1,200 @@
-.profile-page {
-  background-color: #111;
+/* Profile input styles */
+.profile-input {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 15px;
+  color: #222;
+  background: #f5f7fa;
+  margin-left: 8px;
+  outline: none;
+  transition: border 0.2s;
+}
+.profile-input:focus {
+  border-color: #6a1a1a;
+}
+
+.profile-gradient-bg {
   min-height: 100vh;
-  color: #fff;
+  background: linear-gradient(135deg, #e8eaf6 0%, #f5f7fa 100%);
+  color: #222;
 }
 
-.profile-title {
-  font-weight: bold;
-  margin-bottom: 1.5rem;
-  letter-spacing: 2px;
+
+.profile-layout {
+  display: flex;
+  min-height: 90vh;
 }
 
-.profile-divider {
-  border-color: #444;
-  margin-bottom: 2rem;
-}
-
-.profile-card {
-  background-color: #1c1c1c;
-  color: #fff;
+.profile-sidebar {
+  width: 80px;
+  background: #fff;
   border-radius: 20px;
-  max-width: 400px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
-    0 0 20px rgba(0, 0, 0, 0.3),
-    0 0 2px rgba(255, 255, 255, 0.1);
+  margin: 40px 0 40px 40px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 0;
+}
+.sidebar-logo img {
+  width: 40px;
+  margin-bottom: 32px;
+}
+.sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebar-nav li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6a1a1a;
+  font-size: 18px;
+  margin-bottom: 32px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.sidebar-nav li.active,
+.sidebar-nav li:hover {
+  opacity: 1;
+  font-weight: bold;
 }
 
-.profile-avatar {
+
+.profile-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 0 40px 0;
+}
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+.profile-dot {
+  width: 8px;
+  height: 8px;
+  background: #6a1a1a;
+  border-radius: 50%;
+  display: inline-block;
+}
+.profile-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #222;
+}
+
+
+.profile-card-redesign {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 40px;
+  min-width: 600px;
+}
+.profile-img-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.profile-img {
   width: 120px;
   height: 120px;
-  border-radius: 50%;
-  background-color: #555;
-  margin: 0 auto;
+  border-radius: 16px;
+  object-fit: cover;
+  background: #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.profile-username {
-  font-weight: bold;
+
+.profile-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 260px;
+}
+.profile-info-row {
+  display: flex;
+  gap: 16px;
+  font-size: 16px;
+}
+.profile-label {
+  color: #6a1a1a;
+  font-weight: 500;
+  min-width: 110px;
+}
+.profile-value {
+  color: #222;
+  font-weight: 400;
 }
 
-.profile-email,
-.profile-member {
-  color: #bbb;
-  margin: 0.2rem 0;
+
+.profile-action-section {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+.profile-action-btn {
+  background: #f5f7fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 8px 18px;
+  color: #6a1a1a;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.profile-action-btn:hover {
+  background: #e8eaf6;
+}
+.profile-edit-btn {
+  background: #6a1a1a;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 18px;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  margin-left: 16px;
+  transition: background 0.2s;
+}
+.profile-edit-btn:hover {
+  background: #8a2b2b;
 }
 
-.profile-btn {
-  border-radius: 30px;
-  margin-top: 1rem;
+
+/* Responsive */
+@media (max-width: 900px) {
+  .profile-card-redesign {
+    flex-direction: column;
+    min-width: 320px;
+    gap: 24px;
+    padding: 32px 16px;
+  }
+  .profile-layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .profile-sidebar {
+    flex-direction: row;
+    width: 100%;
+    margin: 0;
+    border-radius: 0 0 20px 20px;
+    box-shadow: none;
+    padding: 12px 0;
+  }
 }
