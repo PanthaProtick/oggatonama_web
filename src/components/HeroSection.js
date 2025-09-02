@@ -18,7 +18,7 @@ function HeroSection() {
             <Link to="/register" className="btn btn-danger">
                 Register a dead body
             </Link>
-            <button className="btn btn-danger">Search for a dead body</button>
+            <Link to="/search" className="btn btn-danger">Search for a dead body</Link>
           </div>
         </div>
         <div className="col-lg-6 text-center">
