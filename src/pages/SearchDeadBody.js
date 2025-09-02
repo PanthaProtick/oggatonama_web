@@ -8,6 +8,18 @@ function SearchDeadBody() {
   const [error, setError] = useState("");
   const [division, setDivision] = useState("All");
   const [age, setAge] = useState("All");
+  const divisions = [
+    "All",
+    "Barishal",
+    "Chattogram",
+    "Dhaka",
+    "Khulna",
+    "Rajshahi",
+    "Rangpur",
+    "Mymensingh",
+    "Sylhet"
+  ];
+  const ageIntervals = ["All", ...Array.from({length: 10}, (_, i) => `${i*10}-${i*10+9}`)];
 
   useEffect(() => {
     fetch("http://localhost:5000/api/register")
@@ -22,14 +34,16 @@ function SearchDeadBody() {
       });
   }, []);
 
-  // Filter logic (demo: filter by foundLocation and age range)
+  // Filter logic (division and age interval)
   const filteredBodies = bodies.filter((body) => {
     let divisionMatch = division === "All" || (body.foundLocation && body.foundLocation.toLowerCase().includes(division.toLowerCase()));
-    let ageMatch = age === "All" || (body.age && (
-      (age === "21-25" && body.age >= 21 && body.age <= 25) ||
-      (age === "26-30" && body.age >= 26 && body.age <= 30) ||
-      (age === "31-35" && body.age >= 31 && body.age <= 35)
-    ));
+    let ageMatch = false;
+    if (age === "All") {
+      ageMatch = true;
+    } else if (body.age) {
+      const [min, max] = age.split("-").map(Number);
+      ageMatch = body.age >= min && body.age <= max;
+    }
     return divisionMatch && ageMatch;
   });
 
@@ -44,21 +58,17 @@ function SearchDeadBody() {
         <div className="mb-3">
           <label className="form-label">Filter by Division</label>
           <select className="form-select" value={division} onChange={e => setDivision(e.target.value)}>
-            <option value="All">All</option>
-            <option value="Dhaka">Dhaka</option>
-            <option value="Barisal">Barisal</option>
-            <option value="Chattogram">Chattogram</option>
-            {/* Add more divisions as needed */}
+            {divisions.map(div => (
+              <option key={div} value={div}>{div}</option>
+            ))}
           </select>
         </div>
         <div className="mb-3">
           <label className="form-label">Filter by Approximate Age</label>
           <select className="form-select" value={age} onChange={e => setAge(e.target.value)}>
-            <option value="All">All</option>
-            <option value="21-25">21-25</option>
-            <option value="26-30">26-30</option>
-            <option value="31-35">31-35</option>
-            {/* Add more age ranges as needed */}
+            {ageIntervals.map(interval => (
+              <option key={interval} value={interval}>{interval}</option>
+            ))}
           </select>
         </div>
 
