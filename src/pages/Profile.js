@@ -41,116 +41,100 @@ function Profile() {
   return (
     <div className="profile-gradient-bg">
       <Navbar />
-      <div className="profile-layout">
-        {/* Sidebar */}
-        <aside className="profile-sidebar">
-          <div className="sidebar-logo">
-            <img src="/logo192.png" alt="Logo" />
+      <div className="profile-main-centered">
+        <div className="profile-header">
+          <span className="profile-dot" />
+          <span className="profile-title">Profile</span>
+        </div>
+        <div className="profile-card-redesign">
+          <div className="profile-img-section-centered">
+            {profile.image ? (
+              <img src={profile.image} alt="Profile" className="profile-img" />
+            ) : (
+              <div className="profile-img profile-img-icon-centered">
+                <BiUser size={80} color="#bbb" />
+              </div>
+            )}
+            {editing && (
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleImageChange}
+                style={{ marginTop: "12px" }}
+              />
+            )}
+            <div className="profile-action-section" style={{ marginTop: "18px" }}>
+              <button type="button" className="profile-action-btn"><i className="bi bi-download" /> Download</button>
+              <button type="button" className="profile-action-btn"><i className="bi bi-share" /> Share</button>
+            </div>
           </div>
-          <nav className="sidebar-nav">
-            <ul>
-              <li className="active"><i className="bi bi-person" /> Profile</li>
-              <li><i className="bi bi-house" /> Dashboard</li>
-              <li><i className="bi bi-search" /> Search</li>
-              <li><i className="bi bi-gear" /> Settings</li>
-            </ul>
-          </nav>
-        </aside>
-        {/* Main Content */}
-        <main className="profile-main">
-          <div className="profile-header">
-            <span className="profile-dot" />
-            <span className="profile-title">Profile</span>
-          </div>
-          <div className="profile-card-redesign">
-            <div className="profile-img-section">
-              {profile.image ? (
-                <img src={profile.image} alt="Profile" className="profile-img" />
-              ) : (
-                <div className="profile-img profile-img-icon">
-                  <BiUser size={64} color="#bbb" />
-                </div>
-              )}
-              {editing && (
+          <form className="profile-info-section" onSubmit={handleSave} autoComplete="off">
+            <div className="profile-info-row">
+              <span className="profile-label">Name:</span>
+              {editing ? (
                 <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  onChange={handleImageChange}
-                  style={{ marginTop: "12px" }}
+                  type="text"
+                  name="name"
+                  value={profile.name}
+                  onChange={handleChange}
+                  className="profile-value profile-input"
                 />
+              ) : (
+                <span className="profile-value">{profile.name}</span>
               )}
             </div>
-            <form className="profile-info-section" onSubmit={handleSave} autoComplete="off">
-              <div className="profile-info-row">
-                <span className="profile-label">Name:</span>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="name"
-                    value={profile.name}
-                    onChange={handleChange}
-                    className="profile-value profile-input"
-                  />
-                ) : (
-                  <span className="profile-value">{profile.name}</span>
-                )}
-              </div>
-              <div className="profile-info-row">
-                <span className="profile-label">Email:</span>
-                {editing ? (
-                  <input
-                    type="email"
-                    name="email"
-                    value={profile.email}
-                    onChange={handleChange}
-                    className="profile-value profile-input"
-                  />
-                ) : (
-                  <span className="profile-value">{profile.email}</span>
-                )}
-              </div>
-              <div className="profile-info-row">
-                <span className="profile-label">Phone Number:</span>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="phone"
-                    value={profile.phone}
-                    onChange={handleChange}
-                    className="profile-value profile-input"
-                  />
-                ) : (
-                  <span className="profile-value">{profile.phone}</span>
-                )}
-              </div>
-              <div className="profile-info-row">
-                <span className="profile-label">Address:</span>
-                {editing ? (
-                  <input
-                    type="text"
-                    name="address"
-                    value={profile.address}
-                    onChange={handleChange}
-                    className="profile-value profile-input"
-                  />
-                ) : (
-                  <span className="profile-value">{profile.address}</span>
-                )}
-              </div>
-              <div className="profile-action-section">
-                <button type="button" className="profile-action-btn"><i className="bi bi-download" /> Download</button>
-                <button type="button" className="profile-action-btn"><i className="bi bi-printer" /> Print</button>
-                <button type="button" className="profile-action-btn"><i className="bi bi-share" /> Share</button>
-                {editing ? (
-                  <button type="submit" className="profile-edit-btn"><i className="bi bi-check" /> Save</button>
-                ) : (
-                  <button type="button" className="profile-edit-btn" onClick={handleEdit}><i className="bi bi-pencil-square" /> Edit Profile</button>
-                )}
-              </div>
-            </form>
-          </div>
-        </main>
+            <div className="profile-info-row">
+              <span className="profile-label">Email:</span>
+              {editing ? (
+                <input
+                  type="email"
+                  name="email"
+                  value={profile.email}
+                  onChange={handleChange}
+                  className="profile-value profile-input"
+                />
+              ) : (
+                <span className="profile-value">{profile.email}</span>
+              )}
+            </div>
+            <div className="profile-info-row">
+              <span className="profile-label">Phone Number:</span>
+              {editing ? (
+                <input
+                  type="text"
+                  name="phone"
+                  value={profile.phone}
+                  onChange={handleChange}
+                  className="profile-value profile-input"
+                />
+              ) : (
+                <span className="profile-value">{profile.phone}</span>
+              )}
+            </div>
+            <div className="profile-info-row">
+              <span className="profile-label">Address:</span>
+              {editing ? (
+                <input
+                  type="text"
+                  name="address"
+                  value={profile.address}
+                  onChange={handleChange}
+                  className="profile-value profile-input"
+                />
+              ) : (
+                <span className="profile-value">{profile.address}</span>
+              )}
+            </div>
+            <div style={{ marginTop: "24px", textAlign: "left" }}>
+              {editing ? (
+                <button type="submit" className="profile-edit-btn"><i className="bi bi-check" /> Save</button>
+              ) : (
+                <button type="button" className="profile-edit-btn" onClick={handleEdit}><i className="bi bi-pencil-square" /> Edit Profile</button>
+              )}
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
