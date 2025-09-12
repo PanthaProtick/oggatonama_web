@@ -4,10 +4,33 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const { v2: cloudinary } = require("cloudinary");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// JWT Secret - Add this to your .env file: JWT_SECRET=your_secret_key_here
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key_change_in_production";
+
+// JWT Authentication Middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+};
 
 // Cloudinary Configuration
 cloudinary.config({
@@ -17,8 +40,14 @@ cloudinary.config({
 });
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], // Allow both localhost and 127.0.0.1
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' })); // Increase payload limit for image uploads
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Request logging middleware
@@ -211,9 +240,17 @@ app.post("/api/register", upload.single("photo"), async (req, res) => {
 // User Signup endpoint
 app.post("/api/signup", upload.single("profilePhoto"), async (req, res) => {
   try {
-    console.log("📝 User signup request received");
+    console.log("📝 User signup request received at:", new Date().toISOString());
+    console.log("Request headers:", req.headers);
     console.log("Request body:", req.body);
     console.log("File received:", req.file ? "Yes" : "No");
+    if (req.file) {
+      console.log("File details:", {
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      });
+    }
     
     const { fullName, email, password, contactNumber, nidNumber } = req.body;
     
@@ -255,10 +292,14 @@ app.post("/api/signup", upload.single("profilePhoto"), async (req, res) => {
       return res.status(400).json({ error: "Profile photo is required" });
     }
     
+    // Hash password before saving
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    
     const newUser = new User({
       fullName,
       email,
-      password, // In production, hash the password before saving
+      password: hashedPassword,
       contactNumber,
       nidNumber,
       profilePhoto: profilePhotoUrl,
@@ -295,6 +336,115 @@ app.post("/api/signup", upload.single("profilePhoto"), async (req, res) => {
       });
     }
     
+    res.status(500).json({ error: "Server error: " + err.message });
+  }
+});
+
+// User Signin endpoint
+app.post("/api/signin", async (req, res) => {
+  try {
+    console.log("🔐 User signin request received");
+    const { email, password } = req.body;
+    
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+    
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+    
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        userId: user._id, 
+        email: user.email,
+        fullName: user.fullName 
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' } // Token expires in 24 hours
+    );
+    
+    console.log("✅ User signed in successfully:", user._id);
+    res.json({
+      message: "Signin successful",
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        profilePhoto: user.profilePhoto,
+        contactNumber: user.contactNumber,
+        nidNumber: user.nidNumber
+      }
+    });
+    
+  } catch (err) {
+    console.error("❌ User signin error:", err);
+    res.status(500).json({ error: "Server error: " + err.message });
+  }
+});
+
+// Get current user profile (protected route)
+app.get("/api/profile", authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error("❌ Get profile error:", err);
+    res.status(500).json({ error: "Server error: " + err.message });
+  }
+});
+
+// Update user profile (protected route)
+app.put("/api/profile", authenticateToken, upload.single("profilePhoto"), async (req, res) => {
+  try {
+    const { fullName, contactNumber } = req.body;
+    const userId = req.user.userId;
+    
+    const updateData = {};
+    if (fullName) updateData.fullName = fullName;
+    if (contactNumber) updateData.contactNumber = contactNumber;
+    
+    // Handle profile photo update
+    if (req.file) {
+      try {
+        const cloudinaryResult = await uploadToCloudinary(req.file.buffer, {
+          public_id: `profile_${userId}_${Date.now()}`,
+          folder: "oggatonama_profiles"
+        });
+        updateData.profilePhoto = cloudinaryResult.secure_url;
+      } catch (uploadError) {
+        console.error("❌ Cloudinary upload error:", uploadError);
+        return res.status(500).json({ error: "Failed to upload profile photo" });
+      }
+    }
+    
+    const updatedUser = await User.findByIdAndUpdate(
+      userId, 
+      updateData, 
+      { new: true }
+    ).select('-password');
+    
+    res.json({
+      message: "Profile updated successfully",
+      user: updatedUser
+    });
+    
+  } catch (err) {
+    console.error("❌ Profile update error:", err);
     res.status(500).json({ error: "Server error: " + err.message });
   }
 });

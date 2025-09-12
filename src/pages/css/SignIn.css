@@ -82,20 +82,30 @@
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 10px 0;
+  padding: 14px 24px;
   font-size: 1rem;
   font-weight: 600;
-  margin-top: 8px;
+  margin-top: 16px;
   cursor: pointer;
   transition: background 0.2s;
+  width: 100%;
+  min-height: 48px;
 }
 .btn-signin:hover {
   background: #005f5f;
+}
+.btn-signin:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
 }
 .forgot-link {
   color: #008080;
   text-decoration: none;
   font-size: 0.95rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 .forgot-link:hover {
   text-decoration: underline;

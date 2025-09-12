@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/Navbar';
 import './css/SignUp.css';
 
@@ -16,6 +17,8 @@ function SignUp() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -45,22 +48,62 @@ function SignUp() {
     setError('');
 
     try {
+      console.log('🚀 Starting signup process...');
+      console.log('Form data:', formData);
+      console.log('Profile photo:', profilePhoto);
+      
       const submitData = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         submitData.append(key, value);
+        console.log(`Added to FormData: ${key} = ${value}`);
       });
       if (profilePhoto) {
         submitData.append('profilePhoto', profilePhoto);
+        console.log('Added profile photo to FormData:', profilePhoto.name, profilePhoto.size, 'bytes');
       }
 
-      // TODO: Replace with your actual signup API endpoint
+      console.log('📤 Sending request to signup API...');
       const response = await fetch('http://localhost:5000/api/signup', {
         method: 'POST',
         body: submitData
       });
+      
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response ok:', response.ok);
 
       if (response.ok) {
-        setSuccess('Account created successfully! Please sign in.');
+        const data = await response.json();
+        setSuccess('Account created successfully! Redirecting to dashboard...');
+        
+        // Auto-signin the user after successful registration
+        // Generate a login token by calling signin API
+        const signinResponse = await fetch('http://localhost:5000/api/signin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password
+          })
+        });
+        
+        if (signinResponse.ok) {
+          const signinData = await signinResponse.json();
+          login(signinData.token, signinData.user);
+          
+          // Redirect to dashboard after a short delay
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 1500);
+        } else {
+          // If auto-signin fails, just show success and redirect to signin
+          setTimeout(() => {
+            navigate('/signin');
+          }, 2000);
+        }
+        
+        // Clear form
         setFormData({
           fullName: '',
           email: '',
@@ -75,7 +118,13 @@ function SignUp() {
         setError(data.error || 'Failed to create account');
       }
     } catch (err) {
-      setError('Network error. Please try again.');
+      console.error('❌ Signup error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      });
+      setError('Network error. Please try again. Check console for details.');
     } finally {
       setLoading(false);
     }
