@@ -4,9 +4,17 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
+const { v2: cloudinary } = require("cloudinary");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Cloudinary Configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Middleware
 app.use(cors());
@@ -49,16 +57,21 @@ const RegisterSchema = new mongoose.Schema({
 });
 const Register = mongoose.model("Register", RegisterSchema);
 
-// Multer setup for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "uploads"));
+// Multer setup for file uploads (using memory storage for Cloudinary)
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
   },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
 });
-const upload = multer({ storage });
 
 // Test endpoint
 app.get("/api/test", (req, res) => {
@@ -68,11 +81,36 @@ app.get("/api/test", (req, res) => {
   });
 });
 
+// Helper function to upload image to Cloudinary
+const uploadToCloudinary = (buffer, options = {}) => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload_stream(
+      {
+        resource_type: "image",
+        folder: "oggatonama_uploads", // Organize uploads in a folder
+        transformation: [
+          { width: 800, height: 600, crop: "limit" }, // Resize large images
+          { quality: "auto" }, // Optimize quality
+          { format: "auto" } // Auto format (WebP when supported)
+        ],
+        ...options
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    ).end(buffer);
+  });
+};
+
 // Register route
 app.post("/api/register", upload.single("photo"), async (req, res) => {
   console.log("=== REGISTRATION REQUEST RECEIVED ===");
   console.log("Body:", req.body);
-  console.log("File:", req.file);
+  console.log("File:", req.file ? "Photo uploaded" : "No photo");
   
   try {
     const { foundLocation, age, gender, height, clothing } = req.body;
@@ -82,7 +120,22 @@ app.post("/api/register", upload.single("photo"), async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
     
-    const photo = req.file ? `/uploads/${req.file.filename}` : "";
+    let photoUrl = "";
+    
+    // Upload photo to Cloudinary if provided
+    if (req.file) {
+      console.log("📸 Uploading photo to Cloudinary...");
+      try {
+        const cloudinaryResult = await uploadToCloudinary(req.file.buffer, {
+          public_id: `registration_${Date.now()}` // Unique filename
+        });
+        photoUrl = cloudinaryResult.secure_url;
+        console.log("✅ Photo uploaded to Cloudinary:", photoUrl);
+      } catch (uploadError) {
+        console.error("❌ Cloudinary upload error:", uploadError);
+        return res.status(500).json({ error: "Failed to upload image" });
+      }
+    }
     
     const newRegister = new Register({
       foundLocation,
@@ -90,17 +143,21 @@ app.post("/api/register", upload.single("photo"), async (req, res) => {
       gender,
       height,
       clothing,
-      photo,
+      photo: photoUrl, // Store Cloudinary URL instead of local path
     });
     
-    console.log("About to save to database:", newRegister);
+    console.log("💾 About to save to database:", {
+      ...newRegister.toObject(),
+      photo: photoUrl ? "Photo URL stored" : "No photo"
+    });
     
     const savedRegister = await newRegister.save();
     
     console.log("✅ Registration saved successfully:", savedRegister._id);
     res.status(201).json({ 
       message: "Registration successful",
-      id: savedRegister._id 
+      id: savedRegister._id,
+      photoUrl: photoUrl || null
     });
     
   } catch (err) {

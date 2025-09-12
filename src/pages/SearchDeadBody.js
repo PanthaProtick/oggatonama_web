@@ -89,7 +89,25 @@ function SearchDeadBody() {
                 <p className="card-text mb-1"><b>Gender:</b> {body.gender}</p>
                 <p className="card-text mb-1"><b>Height:</b> {body.height}</p>
                 <p className="card-text mb-1"><b>Clothing:</b> {body.clothing}</p>
-                {body.photo && <img src={`http://localhost:5000${body.photo}`} alt="Dead body" style={{maxWidth:200, maxHeight:200, borderRadius:8, marginBottom:10}} />}
+                {body.photo && (
+                  <div className="mb-3">
+                    <img 
+                      src={body.photo} 
+                      alt="Dead body" 
+                      style={{
+                        maxWidth: 200, 
+                        maxHeight: 200, 
+                        borderRadius: 8, 
+                        objectFit: 'cover',
+                        border: '1px solid #ddd'
+                      }} 
+                      onError={(e) => {
+                        console.error('Image failed to load:', body.photo);
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
                 <p className="card-text mb-1"><b>Reported At:</b> {new Date(body.createdAt).toLocaleString()}</p>
                 <button className="btn btn-danger me-2">Unclaimed</button>
                 <button className="btn btn-primary">Call</button>
