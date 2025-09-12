@@ -1,0 +1,115 @@
+.sign-in-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+.auth-bg {
+  background: #000;
+}
+.auth-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.auth-card {
+  display: flex;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  overflow: hidden;
+  max-width: 700px;
+  width: 100%;
+}
+.left-hero {
+  width: 320px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 32px 24px;
+  color: #fff;
+  background-blend-mode: multiply;
+  background-color: rgba(0,0,0,0.3);
+}
+.hero-text h3 {
+  margin: 0 0 8px 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+.hero-text p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.auth-form {
+  flex: 1;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.panel-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  cursor: pointer;
+}
+.panel-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+.form-label {
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: block;
+}
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  margin-bottom: 16px;
+  font-size: 1rem;
+}
+.btn-signin {
+  background: #008080;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-signin:hover {
+  background: #005f5f;
+}
+.forgot-link {
+  color: #008080;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+.forgot-link:hover {
+  text-decoration: underline;
+}
+.bottom-link {
+  margin-top: 18px;
+  font-size: 0.98rem;
+  text-align: center;
+}
+.bottom-link a {
+  color: #008080;
+  text-decoration: none;
+  font-weight: 500;
+}
+.bottom-link a:hover {
+  text-decoration: underline;
+}

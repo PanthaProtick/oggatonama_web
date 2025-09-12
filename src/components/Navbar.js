@@ -53,6 +53,14 @@ function Navbar() {
                 Profile
               </Link>
             </li>
+              <li className="nav-item">
+                <Link
+                  className={`nav-link ${location.pathname === "/signin" ? "active" : ""}`}
+                  to="/signin"
+                >
+                  Login
+                </Link>
+              </li>
           </ul>
           <Link to="/profile" className="d-none d-lg-block">
             <button className="btn btn-outline-light rounded-circle ms-3">
