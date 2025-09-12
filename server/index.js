@@ -45,7 +45,7 @@ mongoose
     );
   });
 
-// Mongoose Schema
+// Mongoose Schema for Dead Body Registration
 const RegisterSchema = new mongoose.Schema({
   foundLocation: String,
   age: Number,
@@ -56,6 +56,47 @@ const RegisterSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 const Register = mongoose.model("Register", RegisterSchema);
+
+// Mongoose Schema for User Registration
+const UserSchema = new mongoose.Schema({
+  fullName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: 6
+  },
+  contactNumber: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  nidNumber: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  profilePhoto: {
+    type: String,
+    required: true
+  },
+  createdAt: { 
+    type: Date, 
+    default: Date.now 
+  },
+});
+const User = mongoose.model("User", UserSchema);
 
 // Multer setup for file uploads (using memory storage for Cloudinary)
 const storage = multer.memoryStorage();
@@ -163,6 +204,97 @@ app.post("/api/register", upload.single("photo"), async (req, res) => {
   } catch (err) {
     console.error("❌ Registration error:", err);
     console.error("Error stack:", err.stack);
+    res.status(500).json({ error: "Server error: " + err.message });
+  }
+});
+
+// User Signup endpoint
+app.post("/api/signup", upload.single("profilePhoto"), async (req, res) => {
+  try {
+    console.log("📝 User signup request received");
+    console.log("Request body:", req.body);
+    console.log("File received:", req.file ? "Yes" : "No");
+    
+    const { fullName, email, password, contactNumber, nidNumber } = req.body;
+    
+    // Validate required fields
+    if (!fullName || !email || !password || !contactNumber || !nidNumber) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      $or: [{ email }, { nidNumber }] 
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ 
+        error: existingUser.email === email 
+          ? "Email already registered" 
+          : "NID number already registered" 
+      });
+    }
+    
+    let profilePhotoUrl = "";
+    
+    // Upload profile photo to Cloudinary
+    if (req.file) {
+      console.log("📸 Uploading profile photo to Cloudinary...");
+      try {
+        const cloudinaryResult = await uploadToCloudinary(req.file.buffer, {
+          public_id: `profile_${Date.now()}`, // Unique filename
+          folder: "oggatonama_profiles" // Separate folder for profile photos
+        });
+        profilePhotoUrl = cloudinaryResult.secure_url;
+        console.log("✅ Profile photo uploaded to Cloudinary:", profilePhotoUrl);
+      } catch (uploadError) {
+        console.error("❌ Cloudinary upload error:", uploadError);
+        return res.status(500).json({ error: "Failed to upload profile photo" });
+      }
+    } else {
+      return res.status(400).json({ error: "Profile photo is required" });
+    }
+    
+    const newUser = new User({
+      fullName,
+      email,
+      password, // In production, hash the password before saving
+      contactNumber,
+      nidNumber,
+      profilePhoto: profilePhotoUrl,
+    });
+    
+    console.log("💾 About to save user to database:", {
+      ...newUser.toObject(),
+      password: "[HIDDEN]",
+      profilePhoto: profilePhotoUrl ? "Photo URL stored" : "No photo"
+    });
+    
+    const savedUser = await newUser.save();
+    
+    console.log("✅ User registered successfully:", savedUser._id);
+    res.status(201).json({ 
+      message: "Account created successfully",
+      user: {
+        id: savedUser._id,
+        fullName: savedUser.fullName,
+        email: savedUser.email,
+        profilePhoto: savedUser.profilePhoto
+      }
+    });
+    
+  } catch (err) {
+    console.error("❌ User signup error:", err);
+    console.error("Error stack:", err.stack);
+    
+    // Handle duplicate key errors
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyValue)[0];
+      return res.status(400).json({ 
+        error: `${field === 'email' ? 'Email' : 'NID number'} already exists` 
+      });
+    }
+    
     res.status(500).json({ error: "Server error: " + err.message });
   }
 });

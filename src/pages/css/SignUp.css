@@ -19,8 +19,9 @@
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   overflow: hidden;
-  max-width: 700px;
+  max-width: 800px;
   width: 100%;
+  margin: 16px;
 }
 .left-hero {
   width: 320px;
@@ -82,15 +83,21 @@
   color: #fff;
   border: none;
   border-radius: 8px;
-  padding: 10px 0;
+  padding: 14px 24px;
   font-size: 1rem;
   font-weight: 600;
-  margin-top: 8px;
+  margin-top: 16px;
   cursor: pointer;
   transition: background 0.2s;
+  width: 100%;
+  min-height: 48px;
 }
 .btn-signup:hover {
   background: #005f5f;
+}
+.btn-signup:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
 }
 .bottom-link {
   margin-top: 18px;
@@ -104,4 +111,102 @@
 }
 .bottom-link a:hover {
   text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .auth-wrapper {
+    padding: 16px;
+  }
+  
+  .auth-card {
+    flex-direction: column;
+    max-width: 100%;
+    margin: 0;
+  }
+  
+  .left-hero {
+    width: 100%;
+    min-height: 200px;
+    padding: 24px 20px;
+  }
+  
+  .hero-text h3 {
+    font-size: 1.5rem;
+  }
+  
+  .hero-text p {
+    font-size: 1rem;
+  }
+  
+  .auth-form {
+    padding: 32px 24px;
+  }
+  
+  .panel-title {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+  }
+  
+  .form-control {
+    padding: 12px 14px;
+    font-size: 1rem;
+  }
+  
+  .btn-signup {
+    padding: 16px 24px;
+    font-size: 1.1rem;
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-wrapper {
+    padding: 12px;
+  }
+  
+  .auth-form {
+    padding: 24px 20px;
+  }
+  
+  .panel-title {
+    font-size: 1.3rem;
+  }
+  
+  .form-control {
+    padding: 14px 16px;
+    margin-bottom: 18px;
+  }
+  
+  .btn-signup {
+    padding: 18px 24px;
+    margin-top: 24px;
+  }
+  
+  .left-hero {
+    min-height: 160px;
+    padding: 20px 16px;
+  }
+  
+  .hero-text h3 {
+    font-size: 1.3rem;
+  }
+  
+  .hero-text p {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .auth-form {
+    padding: 20px 16px;
+  }
+  
+  .form-control {
+    padding: 12px 14px;
+  }
+  
+  .btn-signup {
+    padding: 16px 20px;
+  }
 }
