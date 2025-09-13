@@ -83,6 +83,7 @@ const RegisterSchema = new mongoose.Schema({
   clothing: String,
   photo: String,
   reporter: String, // New field for reporter's name
+  reporterContact: String, // New field for reporter's contact number
   createdAt: { type: Date, default: Date.now },
 });
 const Register = mongoose.model("Register", RegisterSchema);
@@ -209,6 +210,7 @@ app.post("/api/register", authenticateToken, upload.single("photo"), async (req,
     }
     
     const reporterName = req.user?.fullName || req.user?.name || "Unknown";
+    const reporterContact = req.user?.contactNumber || "";
     const newRegister = new Register({
       foundLocation,
       age: parseInt(age), // Ensure age is a number
@@ -217,6 +219,7 @@ app.post("/api/register", authenticateToken, upload.single("photo"), async (req,
       clothing,
       photo: photoUrl, // Store Cloudinary URL instead of local path
       reporter: reporterName,
+      reporterContact,
     });
     
     console.log("💾 About to save to database:", {
@@ -371,7 +374,8 @@ app.post("/api/signin", async (req, res) => {
       { 
         userId: user._id, 
         email: user.email,
-        fullName: user.fullName 
+        fullName: user.fullName,
+        contactNumber: user.contactNumber
       },
       JWT_SECRET,
       { expiresIn: '24h' } // Token expires in 24 hours

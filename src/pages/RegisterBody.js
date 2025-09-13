@@ -24,7 +24,8 @@ function RegisterBody() {
     exactLocation: "",
     age: "",
     gender: "",
-    height: "",
+    heightFeet: "",
+    heightInch: "",
     clothing: "",
   });
   const [photo, setPhoto] = useState(null);
@@ -53,13 +54,23 @@ function RegisterBody() {
 
     // Combine location fields
     const foundLocation = `${form.division}, ${form.district}, ${form.exactLocation}`;
+    const height = form.heightFeet && form.heightInch
+      ? `${form.heightFeet}'${form.heightInch}"`
+      : form.heightFeet
+        ? `${form.heightFeet}'0"`
+        : form.heightInch
+          ? `0'${form.heightInch}"`
+          : "";
     const submitForm = {
       ...form,
       foundLocation,
+      height,
     };
     delete submitForm.division;
     delete submitForm.district;
     delete submitForm.exactLocation;
+    delete submitForm.heightFeet;
+    delete submitForm.heightInch;
 
     try {
       const formData = new FormData();
@@ -78,7 +89,7 @@ function RegisterBody() {
 
       if (res.ok) {
         setSuccess("Registration successful!");
-        setForm({ division: "", district: "", exactLocation: "", age: "", gender: "", height: "", clothing: "" });
+        setForm({ division: "", district: "", exactLocation: "", age: "", gender: "", heightFeet: "", heightInch: "", clothing: "" });
         setPhoto(null);
         const fileInput = document.querySelector('input[type="file"]');
         if (fileInput) fileInput.value = '';
@@ -178,15 +189,32 @@ function RegisterBody() {
 
             <div className="mb-3">
               <label className="form-label">Height</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder={'e.g., 5\'7" or 170 cm'}
-                name="height"
-                value={form.height}
-                onChange={handleChange}
-                required
-              />
+              <div style={{ display: "flex", gap: "10px" }}>
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="Feet"
+                  name="heightFeet"
+                  value={form.heightFeet}
+                  onChange={handleChange}
+                  min="0"
+                  required
+                  style={{ maxWidth: "120px" }}
+                />
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="Inch"
+                  name="heightInch"
+                  value={form.heightInch}
+                  onChange={handleChange}
+                  min="0"
+                  max="11"
+                  required
+                  style={{ maxWidth: "120px" }}
+                />
+              </div>
+              <small className="form-text text-muted">e.g., 5 feet 7 inch</small>
             </div>
 
             <div className="mb-3">

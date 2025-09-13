@@ -3,6 +3,8 @@ import Navbar from "../components/Navbar";
 import "./css/RegisterBody.css";
 
 function SearchDeadBody() {
+  const [showContact, setShowContact] = useState(false);
+  const [contactNumber, setContactNumber] = useState("");
   const divisionDistricts = {
     Barishal: ["Barguna", "Barishal", "Bhola", "Jhalokati", "Patuakhali", "Pirojpur"],
     Chittagong: ["Bandarban", "Brahmanbaria", "Chandpur", "Chittagong", "Comilla", "Cox's Bazar", "Feni", "Khagrachhari", "Lakshmipur", "Noakhali", "Rangamati"],
@@ -128,11 +130,43 @@ function SearchDeadBody() {
                 )}
                 <p className="card-text mb-1"><b>Reported At:</b> {new Date(body.createdAt).toLocaleString()}</p>
                 <button className="btn btn-danger me-2">Unclaimed</button>
-                <button className="btn btn-primary">Call</button>
+                <button className="btn btn-primary" onClick={() => {
+                  setContactNumber(body.reporterContact || "Not available");
+                  setShowContact(true);
+                }}>Call</button>
               </div>
             </div>
           ))
         )}
+      {/* Contact Popup */}
+      {showContact && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          background: "rgba(0,0,0,0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999
+        }}>
+            <div style={{
+              background: "#4B1E1E", // dark brown
+              color: "#fff",
+              padding: "32px 24px",
+              borderRadius: "12px",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.2)",
+              minWidth: "320px",
+              textAlign: "center"
+            }}>
+            <h4 style={{marginBottom: "16px"}}>Reporter Contact Number</h4>
+            <div style={{fontSize: "1.3rem", fontWeight: "bold", marginBottom: "24px"}}>{contactNumber}</div>
+            <button className="btn btn-danger" onClick={() => setShowContact(false)}>Close</button>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
