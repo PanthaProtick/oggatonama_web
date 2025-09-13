@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
 import Navbar from "../components/Navbar";
 import "./css/RegisterBody.css";
 
 
 function RegisterBody() {
+  const { token } = useAuth();
   const divisionDistricts = {
     Barishal: ["Barguna", "Barishal", "Bhola", "Jhalokati", "Patuakhali", "Pirojpur"],
     Chittagong: ["Bandarban", "Brahmanbaria", "Chandpur", "Chittagong", "Comilla", "Cox's Bazar", "Feni", "Khagrachhari", "Lakshmipur", "Noakhali", "Rangamati"],
@@ -69,6 +71,9 @@ function RegisterBody() {
       const res = await fetch("http://localhost:5000/api/register", {
         method: "POST",
         body: formData,
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
 
       if (res.ok) {

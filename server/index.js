@@ -82,6 +82,7 @@ const RegisterSchema = new mongoose.Schema({
   height: String,
   clothing: String,
   photo: String,
+  reporter: String, // New field for reporter's name
   createdAt: { type: Date, default: Date.now },
 });
 const Register = mongoose.model("Register", RegisterSchema);
@@ -177,7 +178,7 @@ const uploadToCloudinary = (buffer, options = {}) => {
 };
 
 // Register route
-app.post("/api/register", upload.single("photo"), async (req, res) => {
+app.post("/api/register", authenticateToken, upload.single("photo"), async (req, res) => {
   console.log("=== REGISTRATION REQUEST RECEIVED ===");
   console.log("Body:", req.body);
   console.log("File:", req.file ? "Photo uploaded" : "No photo");
@@ -207,6 +208,7 @@ app.post("/api/register", upload.single("photo"), async (req, res) => {
       }
     }
     
+    const reporterName = req.user?.fullName || req.user?.name || "Unknown";
     const newRegister = new Register({
       foundLocation,
       age: parseInt(age), // Ensure age is a number
@@ -214,6 +216,7 @@ app.post("/api/register", upload.single("photo"), async (req, res) => {
       height,
       clothing,
       photo: photoUrl, // Store Cloudinary URL instead of local path
+      reporter: reporterName,
     });
     
     console.log("💾 About to save to database:", {

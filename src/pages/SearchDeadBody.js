@@ -101,7 +101,7 @@ function SearchDeadBody() {
           filteredBodies.map((body) => (
             <div className="card register-card mx-auto mb-4" key={body._id}>
               <div className="card-body">
-                <h5 className="card-title"><b>Reporter:</b> Unknown</h5>
+                <h5 className="card-title"><b>Reporter:</b> {body.reporter || "Unknown"}</h5>
                 <p className="card-text mb-1"><b>Discovery Location:</b> {body.foundLocation}</p>
                 <p className="card-text mb-1"><b>Approximate Age:</b> {body.age}</p>
                 <p className="card-text mb-1"><b>Gender:</b> {body.gender}</p>
