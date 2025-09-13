@@ -3,22 +3,23 @@ import Navbar from "../components/Navbar";
 import "./css/RegisterBody.css";
 
 function SearchDeadBody() {
+  const divisionDistricts = {
+    Barishal: ["Barguna", "Barishal", "Bhola", "Jhalokati", "Patuakhali", "Pirojpur"],
+    Chittagong: ["Bandarban", "Brahmanbaria", "Chandpur", "Chittagong", "Comilla", "Cox's Bazar", "Feni", "Khagrachhari", "Lakshmipur", "Noakhali", "Rangamati"],
+    Dhaka: ["Dhaka", "Faridpur", "Gazipur", "Gopalganj", "Jamalpur", "Kishoreganj", "Madaripur", "Manikganj", "Munshiganj", "Mymensingh", "Narayanganj", "Narsingdi", "Netrokona", "Rajbari", "Shariatpur", "Sherpur", "Tangail"],
+    Khulna: ["Bagerhat", "Chuadanga", "Jessore", "Jhenaidah", "Khulna", "Kushtia", "Magura", "Meherpur", "Narail", "Satkhira"],
+    Mymensingh: ["Jamalpur", "Mymensingh", "Netrokona", "Sherpur"],
+    Rajshahi: ["Bogra", "Chapainawabganj", "Joypurhat", "Naogaon", "Natore", "Pabna", "Rajshahi", "Sirajganj"],
+    Rangpur: ["Dinajpur", "Gaibandha", "Kurigram", "Lalmonirhat", "Nilphamari", "Panchagarh", "Rangpur", "Thakurgaon"],
+    Sylhet: ["Habiganj", "Moulvibazar", "Sunamganj", "Sylhet"]
+  };
+  const divisions = ["All", ...Object.keys(divisionDistricts)];
   const [bodies, setBodies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [division, setDivision] = useState("All");
+  const [district, setDistrict] = useState("All");
   const [age, setAge] = useState("All");
-  const divisions = [
-    "All",
-    "Barishal",
-    "Chattogram",
-    "Dhaka",
-    "Khulna",
-    "Rajshahi",
-    "Rangpur",
-    "Mymensingh",
-    "Sylhet"
-  ];
   const ageIntervals = ["All", ...Array.from({length: 10}, (_, i) => `${i*10}-${i*10+9}`)];
 
   useEffect(() => {
@@ -34,9 +35,17 @@ function SearchDeadBody() {
       });
   }, []);
 
-  // Filter logic (division and age interval)
+  // Filter logic (division, district, and age interval)
   const filteredBodies = bodies.filter((body) => {
-    let divisionMatch = division === "All" || (body.foundLocation && body.foundLocation.toLowerCase().includes(division.toLowerCase()));
+    let foundDivision = "";
+    let foundDistrict = "";
+    if (body.foundLocation) {
+      const parts = body.foundLocation.split(",");
+      foundDivision = parts[0]?.trim();
+      foundDistrict = parts[1]?.trim();
+    }
+    let divisionMatch = division === "All" || foundDivision === division;
+    let districtMatch = district === "All" || foundDistrict === district;
     let ageMatch = false;
     if (age === "All") {
       ageMatch = true;
@@ -44,7 +53,7 @@ function SearchDeadBody() {
       const [min, max] = age.split("-").map(Number);
       ageMatch = body.age >= min && body.age <= max;
     }
-    return divisionMatch && ageMatch;
+    return divisionMatch && districtMatch && ageMatch;
   });
 
   return (
@@ -57,9 +66,18 @@ function SearchDeadBody() {
         {/* Filters */}
         <div className="mb-3">
           <label className="form-label">Filter by Division</label>
-          <select className="form-select" value={division} onChange={e => setDivision(e.target.value)}>
+          <select className="form-select" value={division} onChange={e => { setDivision(e.target.value); setDistrict("All"); }}>
             {divisions.map(div => (
               <option key={div} value={div}>{div}</option>
+            ))}
+          </select>
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Filter by District</label>
+          <select className="form-select" value={district} onChange={e => setDistrict(e.target.value)} disabled={division === "All"}>
+            <option value="All">All</option>
+            {division !== "All" && divisionDistricts[division]?.map(dist => (
+              <option key={dist} value={dist}>{dist}</option>
             ))}
           </select>
         </div>

@@ -2,9 +2,24 @@ import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import "./css/RegisterBody.css";
 
+
 function RegisterBody() {
+  const divisionDistricts = {
+    Barishal: ["Barguna", "Barishal", "Bhola", "Jhalokati", "Patuakhali", "Pirojpur"],
+    Chittagong: ["Bandarban", "Brahmanbaria", "Chandpur", "Chittagong", "Comilla", "Cox's Bazar", "Feni", "Khagrachhari", "Lakshmipur", "Noakhali", "Rangamati"],
+    Dhaka: ["Dhaka", "Faridpur", "Gazipur", "Gopalganj", "Jamalpur", "Kishoreganj", "Madaripur", "Manikganj", "Munshiganj", "Mymensingh", "Narayanganj", "Narsingdi", "Netrokona", "Rajbari", "Shariatpur", "Sherpur", "Tangail"],
+    Khulna: ["Bagerhat", "Chuadanga", "Jessore", "Jhenaidah", "Khulna", "Kushtia", "Magura", "Meherpur", "Narail", "Satkhira"],
+    Mymensingh: ["Jamalpur", "Mymensingh", "Netrokona", "Sherpur"],
+    Rajshahi: ["Bogra", "Chapainawabganj", "Joypurhat", "Naogaon", "Natore", "Pabna", "Rajshahi", "Sirajganj"],
+    Rangpur: ["Dinajpur", "Gaibandha", "Kurigram", "Lalmonirhat", "Nilphamari", "Panchagarh", "Rangpur", "Thakurgaon"],
+    Sylhet: ["Habiganj", "Moulvibazar", "Sunamganj", "Sylhet"]
+  };
+  const divisions = Object.keys(divisionDistricts);
+
   const [form, setForm] = useState({
-    foundLocation: "",
+    division: "",
+    district: "",
+    exactLocation: "",
     age: "",
     gender: "",
     height: "",
@@ -18,6 +33,10 @@ function RegisterBody() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // Reset district if division changes
+    if (name === "division") {
+      setForm((prev) => ({ ...prev, district: "" }));
+    }
   };
 
   const handleFileChange = (e) => {
@@ -29,41 +48,40 @@ function RegisterBody() {
     setLoading(true);
     setSuccess("");
     setError("");
-    
-    console.log('Form data before submission:', form);
-    console.log('Photo selected:', photo);
-    
+
+    // Combine location fields
+    const foundLocation = `${form.division}, ${form.district}, ${form.exactLocation}`;
+    const submitForm = {
+      ...form,
+      foundLocation,
+    };
+    delete submitForm.division;
+    delete submitForm.district;
+    delete submitForm.exactLocation;
+
     try {
       const formData = new FormData();
-      Object.entries(form).forEach(([key, value]) => {
+      Object.entries(submitForm).forEach(([key, value]) => {
         formData.append(key, value);
       });
       if (photo) formData.append("photo", photo);
 
-      console.log('Making request to http://localhost:5000/api/register...');
-      
       const res = await fetch("http://localhost:5000/api/register", {
         method: "POST",
         body: formData,
       });
-      
-      console.log('Response status:', res.status);
-      console.log('Response OK:', res.ok);
-      
+
       if (res.ok) {
         setSuccess("Registration successful!");
-        setForm({ foundLocation: "", age: "", gender: "", height: "", clothing: "" });
+        setForm({ division: "", district: "", exactLocation: "", age: "", gender: "", height: "", clothing: "" });
         setPhoto(null);
-        // Reset the file input
         const fileInput = document.querySelector('input[type="file"]');
         if (fileInput) fileInput.value = '';
       } else {
         const data = await res.json();
-        console.log('Error response:', data);
         setError(data.error || "Registration failed");
       }
     } catch (err) {
-      console.error('Network error:', err);
       setError("Network error: " + err.message);
     } finally {
       setLoading(false);
@@ -80,15 +98,47 @@ function RegisterBody() {
         <div className="card register-card mx-auto">
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
-              <label className="form-label">Found Location</label>
+              <label className="form-label">Division</label>
+              <select
+                className="form-select"
+                name="division"
+                value={form.division}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select Division</option>
+                {divisions.map((div) => (
+                  <option key={div} value={div}>{div}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-3">
+              <label className="form-label">District</label>
+              <select
+                className="form-select"
+                name="district"
+                value={form.district}
+                onChange={handleChange}
+                required
+                disabled={!form.division}
+              >
+                <option value="">Select District</option>
+                {form.division && divisionDistricts[form.division].map((dist) => (
+                  <option key={dist} value={dist}>{dist}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Exact Location</label>
               <input
                 type="text"
                 className="form-control"
                 placeholder="e.g., Mirpur 10 bus stand"
-                name="foundLocation"
-                value={form.foundLocation}
+                name="exactLocation"
+                value={form.exactLocation}
                 onChange={handleChange}
                 required
+                disabled={!form.district}
               />
             </div>
 
