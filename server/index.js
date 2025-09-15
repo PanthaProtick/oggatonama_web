@@ -7,12 +7,27 @@ const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v2: cloudinary } = require("cloudinary");
+const nodemailer = require("nodemailer");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // JWT Secret - Add this to your .env file: JWT_SECRET=your_secret_key_here
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key_change_in_production";
+
+// Email configuration
+const transporter = nodemailer.createTransport({
+  service: 'gmail', // or your preferred email service
+  auth: {
+    user: process.env.EMAIL_USER, // your email
+    pass: process.env.EMAIL_PASS  // your app password
+  }
+});
+
+// Helper function to generate 6-digit verification code
+const generateVerificationCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 // JWT Authentication Middleware
 const authenticateToken = (req, res, next) => {
@@ -122,6 +137,19 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // Password reset fields
+  resetPasswordToken: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null
+  },
+  resetPasswordCode: {
+    type: String,
+    default: null
+  },
   createdAt: { 
     type: Date, 
     default: Date.now 
@@ -150,6 +178,22 @@ app.get("/api/test", (req, res) => {
   res.json({
     message: "Backend is working!",
     timestamp: new Date().toISOString(),
+  });
+});
+
+// Email configuration test endpoint
+app.get("/api/test-email-config", (req, res) => {
+  const emailConfigured = process.env.EMAIL_USER && 
+                          process.env.EMAIL_PASS && 
+                          process.env.EMAIL_USER !== 'your_email@gmail.com';
+  
+  res.json({
+    emailConfigured,
+    emailUser: process.env.EMAIL_USER,
+    emailPassSet: !!process.env.EMAIL_PASS,
+    message: emailConfigured 
+      ? "Email is properly configured" 
+      : "Email needs to be configured in .env file"
   });
 });
 
@@ -398,6 +442,105 @@ app.post("/api/signin", async (req, res) => {
   } catch (err) {
     console.error("❌ User signin error:", err);
     res.status(500).json({ error: "Server error: " + err.message });
+  }
+});
+
+// Forgot password - generate code and send email
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    // Always return 200 with a generic message to avoid revealing account existence
+    if (!user) {
+      return res.json({ message: 'If an account exists with that email, a verification code has been sent.' });
+    }
+
+    // Generate a 6-digit verification code
+    const verificationCode = generateVerificationCode();
+
+    user.resetPasswordCode = verificationCode;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    // Send email with verification code
+    try {
+      console.log(`📧 Attempting to send email to: ${email}`);
+      console.log(`📧 Using EMAIL_USER: ${process.env.EMAIL_USER}`);
+      console.log(`📧 EMAIL_PASS configured: ${process.env.EMAIL_PASS ? 'Yes' : 'No'}`);
+      
+      if (!process.env.EMAIL_USER || process.env.EMAIL_USER === 'your_email@gmail.com') {
+        console.log('⚠️  Email not configured properly. Please set EMAIL_USER and EMAIL_PASS in .env file');
+        // Still return success to avoid revealing email configuration status
+        return res.json({ message: 'If an account exists with that email, a verification code has been sent.' });
+      }
+
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Password Reset - Oggatonama',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>Password Reset Request</h2>
+            <p>You requested a password reset for your Oggatonama account.</p>
+            <p>Your verification code is:</p>
+            <div style="background: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 4px;">${verificationCode}</span>
+            </div>
+            <p>This code will expire in 1 hour.</p>
+            <p>If you didn't request this, please ignore this email.</p>
+            <p>Best regards,<br>Oggatonama Team</p>
+          </div>
+        `
+      });
+      console.log(`✅ Reset code sent to ${email}: ${verificationCode}`);
+    } catch (emailError) {
+      console.error('❌ Failed to send email:', emailError.message);
+      console.error('❌ Full error:', emailError);
+      // Don't reveal email sending failure to user
+    }
+
+    res.json({ message: 'If an account exists with that email, a verification code has been sent.' });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Reset password - verify code and update password
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ error: 'Email, verification code, and new password are required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.resetPasswordCode !== code || Date.now() > user.resetPasswordExpires) {
+      return res.status(400).json({ error: 'Invalid or expired verification code' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
+
+    // Hash new password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    user.password = hashedPassword;
+    user.resetPasswordCode = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    console.log(`✅ Password reset successful for ${email}`);
+    res.json({ message: 'Password reset successful' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
