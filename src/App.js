@@ -10,6 +10,8 @@ import SearchDeadBody from "./pages/SearchDeadBody";
 
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
@@ -37,9 +39,18 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          <Route path="/search" element={<SearchDeadBody />} />
+          <Route 
+            path="/search" 
+            element={
+              <ProtectedRoute>
+                <SearchDeadBody />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </Router>
     </AuthProvider>

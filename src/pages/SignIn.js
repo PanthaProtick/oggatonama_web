@@ -100,7 +100,7 @@ function SignIn() {
                 />
               </div>
               <div className="d-flex justify-content-between align-items-center mb-2">
-                <button type="button" className="forgot-link">Forgot password?</button>
+                <Link to="/forgot-password" className="forgot-link">Forgot password?</Link>
               </div>
               <button 
                 type="submit" 
