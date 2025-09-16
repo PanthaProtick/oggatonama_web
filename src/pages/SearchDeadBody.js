@@ -187,42 +187,45 @@ function SearchDeadBody() {
                 <p className="card-text mb-1"><b>Reported At:</b> {new Date(body.createdAt).toLocaleString()}</p>
                 {/* Claim/Pending/Approve Button Logic */}
 
-                {body.status === "unclaimed" ? (
-                  <button
-                    className="btn btn-danger me-2"
-                    style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
-                    disabled={statusUpdating[body._id] || !user}
-                    onClick={() => handleClaimRequest(body)}
-                  >
-                    {statusUpdating[body._id] ? "Requesting..." : "Claim"}
-                  </button>
-                ) : body.status === "pending" ? (
-                  (() => {
-                    const claimRequests = Array.isArray(body.claimRequests) ? body.claimRequests : [];
-                    const userName = user?.fullName || user?.name || "";
-                    if (claimRequests.includes(userName)) {
-                      return (
-                        <button
-                          className="btn btn-warning me-2"
-                          style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
-                          disabled
-                        >
-                          Pending (You)
-                        </button>
-                      );
-                    } else {
-                      return (
-                        <button
-                          className="btn btn-warning me-2"
-                          style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
-                          disabled
-                        >
-                          Pending
-                        </button>
-                      );
-                    }
-                  })()
-                ) : null}
+                {(() => {
+                  const claimRequests = Array.isArray(body.claimRequests) ? body.claimRequests : [];
+                  const userName = user?.fullName || user?.name || "";
+                  // Hide claim button for reporter and for users who have already claimed
+                  if (user && body.reporter !== userName && !claimRequests.includes(userName)) {
+                    return (
+                      <button
+                        className="btn btn-danger me-2"
+                        style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
+                        disabled={statusUpdating[body._id]}
+                        onClick={() => handleClaimRequest(body)}
+                      >
+                        {statusUpdating[body._id] ? "Requesting..." : "Claim"}
+                      </button>
+                    );
+                  } else if (user && claimRequests.includes(userName)) {
+                    return (
+                      <button
+                        className="btn btn-warning me-2"
+                        style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
+                        disabled
+                      >
+                        Pending (You)
+                      </button>
+                    );
+                  } else if (body.status === "pending" && claimRequests.length > 0) {
+                    return (
+                      <button
+                        className="btn btn-warning me-2"
+                        style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
+                        disabled
+                      >
+                        Pending
+                      </button>
+                    );
+                  } else {
+                    return null;
+                  }
+                })()}
 
                 {/* Approve button for reporter if there are claim requests */}
                 {body.status === "pending" && user && (body.reporter === user.fullName || body.reporter === user.name) && Array.isArray(body.claimRequests) && body.claimRequests.length > 0 && (
