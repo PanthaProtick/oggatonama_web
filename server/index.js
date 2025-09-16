@@ -99,6 +99,12 @@ const RegisterSchema = new mongoose.Schema({
   photo: String,
   reporter: String, // New field for reporter's name
   reporterContact: String, // New field for reporter's contact number
+  status: {
+    type: String,
+    enum: ['unclaimed', 'pending', 'claimed'],
+    default: 'unclaimed',
+    required: true
+  },
   createdAt: { type: Date, default: Date.now },
 });
 const Register = mongoose.model("Register", RegisterSchema);
@@ -266,6 +272,7 @@ app.post("/api/register", authenticateToken, upload.single("photo"), async (req,
       photo: photoUrl, // Store Cloudinary URL instead of local path
       reporter: reporterName,
       reporterContact,
+      status: 'unclaimed', // Default status
     });
     
     console.log("💾 About to save to database:", {
@@ -631,6 +638,34 @@ app.get("/api/register/:id", async (req, res) => {
     }
     res.json(entry);
   } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Update status of a register entry
+app.patch("/api/register/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+    console.log(`[PATCH] /api/register/${req.params.id}/status called.`);
+    console.log('Request params:', req.params);
+    console.log('Request body:', req.body);
+    if (!['unclaimed', 'pending', 'claimed'].includes(status)) {
+      console.log('Invalid status value:', status);
+      return res.status(400).json({ error: "Invalid status value" });
+    }
+    const entry = await Register.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    if (!entry) {
+      console.log('Entry not found for ID:', req.params.id);
+      return res.status(404).json({ error: "Entry not found" });
+    }
+    console.log('MongoDB update result:', entry);
+    res.json({ message: "Status updated", entry });
+  } catch (err) {
+    console.error('Error in PATCH /api/register/:id/status:', err);
     res.status(500).json({ error: "Server error" });
   }
 });

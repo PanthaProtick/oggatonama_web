@@ -5,6 +5,7 @@ import "./css/RegisterBody.css";
 function SearchDeadBody() {
   const [showContact, setShowContact] = useState(false);
   const [contactNumber, setContactNumber] = useState("");
+  const [statusUpdating, setStatusUpdating] = useState({});
   const divisionDistricts = {
     Barishal: ["Barguna", "Barishal", "Bhola", "Jhalokati", "Patuakhali", "Pirojpur"],
     Chittagong: ["Bandarban", "Brahmanbaria", "Chandpur", "Chittagong", "Comilla", "Cox's Bazar", "Feni", "Khagrachhari", "Lakshmipur", "Noakhali", "Rangamati"],
@@ -24,9 +25,10 @@ function SearchDeadBody() {
   const [age, setAge] = useState("All");
   const ageIntervals = ["All", ...Array.from({length: 10}, (_, i) => `${i*10}-${i*10+9}`)];
 
+  const API_BASE = "http://localhost:5000";
   const fetchBodies = () => {
     setLoading(true);
-  fetch("http://localhost:5000/api/register?ts=" + Date.now()) // prevent cache
+    fetch(`${API_BASE}/api/register?ts=${Date.now()}`)
       .then((res) => res.json())
       .then((data) => {
         setBodies(data);
@@ -62,6 +64,33 @@ function SearchDeadBody() {
     return divisionMatch && districtMatch && ageMatch;
   });
 
+  // Status update handler
+  const handleStatusUpdate = async (body) => {
+    setStatusUpdating((prev) => ({ ...prev, [body._id]: true }));
+    // Optimistically update status in UI
+    setBodies((prevBodies) =>
+      prevBodies.map((b) =>
+        b._id === body._id ? { ...b, status: "pending" } : b
+      )
+    );
+    try {
+      const res = await fetch(`${API_BASE}/api/register/${body._id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ status: "pending" })
+      });
+      if (res.ok) {
+        // Optionally re-fetch to sync with server
+        fetchBodies();
+      }
+    } catch (err) {
+      // Optionally show error and revert status
+    }
+    setStatusUpdating((prev) => ({ ...prev, [body._id]: false }));
+  };
+
   return (
     <div className="register-page">
       <Navbar />
@@ -71,7 +100,6 @@ function SearchDeadBody() {
           <button className="btn btn-secondary" onClick={fetchBodies} style={{height:'40px'}}>Refresh</button>
         </div>
         <hr className="register-divider mb-4" />
-
         {/* Filters */}
         <div className="mb-3">
           <label className="form-label">Filter by Division</label>
@@ -98,7 +126,6 @@ function SearchDeadBody() {
             ))}
           </select>
         </div>
-
         {/* Body List */}
         {loading ? (
           <div className="text-center text-light">Loading...</div>
@@ -136,7 +163,21 @@ function SearchDeadBody() {
                   </div>
                 )}
                 <p className="card-text mb-1"><b>Reported At:</b> {new Date(body.createdAt).toLocaleString()}</p>
-                <button className="btn btn-danger me-2">Unclaimed</button>
+                <button
+                  className={`btn me-2 ${body.status === "unclaimed" ? "btn-danger" : "btn-warning"}`}
+                  style={{
+                    backgroundColor: body.status === "unclaimed" ? '#8B2323' : '#ffc107',
+                    color: body.status === "unclaimed" ? '#fff' : '#000',
+                    border: 'none',
+                    minWidth: '140px',
+                    fontWeight: 'bold',
+                    fontSize: '1.2rem'
+                  }}
+                  disabled={statusUpdating[body._id]}
+                  onClick={() => handleStatusUpdate(body)}
+                >
+                  {statusUpdating[body._id] ? "Updating..." : body.status}
+                </button>
                 <button className="btn btn-primary" onClick={() => {
                   setContactNumber(body.reporterContact || "Not available");
                   setShowContact(true);
@@ -145,20 +186,20 @@ function SearchDeadBody() {
             </div>
           ))
         )}
-      {/* Contact Popup */}
-      {showContact && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          background: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 9999
-        }}>
+        {/* Contact Popup */}
+        {showContact && (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999
+          }}>
             <div style={{
               background: "#4B1E1E", // dark brown
               color: "#fff",
@@ -168,12 +209,12 @@ function SearchDeadBody() {
               minWidth: "320px",
               textAlign: "center"
             }}>
-            <h4 style={{marginBottom: "16px"}}>Reporter Contact Number</h4>
-            <div style={{fontSize: "1.3rem", fontWeight: "bold", marginBottom: "24px"}}>{contactNumber}</div>
-            <button className="btn btn-danger" onClick={() => setShowContact(false)}>Close</button>
+              <h4 style={{marginBottom: "16px"}}>Reporter Contact Number</h4>
+              <div style={{fontSize: "1.3rem", fontWeight: "bold", marginBottom: "24px"}}>{contactNumber}</div>
+              <button className="btn btn-danger" onClick={() => setShowContact(false)}>Close</button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );
