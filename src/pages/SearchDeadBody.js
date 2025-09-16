@@ -1,11 +1,14 @@
+
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
+import { useAuth } from "../contexts/AuthContext";
 import "./css/RegisterBody.css";
 
 function SearchDeadBody() {
   const [showContact, setShowContact] = useState(false);
   const [contactNumber, setContactNumber] = useState("");
   const [statusUpdating, setStatusUpdating] = useState({});
+  const { user, token } = useAuth();
   const divisionDistricts = {
     Barishal: ["Barguna", "Barishal", "Bhola", "Jhalokati", "Patuakhali", "Pirojpur"],
     Chittagong: ["Bandarban", "Brahmanbaria", "Chandpur", "Chittagong", "Comilla", "Cox's Bazar", "Feni", "Khagrachhari", "Lakshmipur", "Noakhali", "Rangamati"],
@@ -31,6 +34,7 @@ function SearchDeadBody() {
     fetch(`${API_BASE}/api/register?ts=${Date.now()}`)
       .then((res) => res.json())
       .then((data) => {
+        console.log("[DEBUG] Bodies fetched:", data);
         setBodies(data);
         setLoading(false);
       })
@@ -64,30 +68,48 @@ function SearchDeadBody() {
     return divisionMatch && districtMatch && ageMatch;
   });
 
-  // Status update handler
-  const handleStatusUpdate = async (body) => {
+
+  // Claim request handler
+  const handleClaimRequest = async (body) => {
     setStatusUpdating((prev) => ({ ...prev, [body._id]: true }));
-    // Optimistically update status in UI
-    setBodies((prevBodies) =>
-      prevBodies.map((b) =>
-        b._id === body._id ? { ...b, status: "pending" } : b
-      )
-    );
     try {
-      const res = await fetch(`${API_BASE}/api/register/${body._id}/status`, {
+      console.log("[DEBUG] Sending claim request for:", body._id, "as user:", user?.fullName || user?.name);
+      const res = await fetch(`${API_BASE}/api/register/${body._id}/claim`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ status: "pending" })
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
+      const result = await res.json();
+      console.log("[DEBUG] Claim response:", result);
       if (res.ok) {
-        // Optionally re-fetch to sync with server
         fetchBodies();
+      } else {
+        alert(result.error || "Claim failed");
       }
     } catch (err) {
-      // Optionally show error and revert status
+      console.error("[DEBUG] Claim request error:", err);
     }
+    setStatusUpdating((prev) => ({ ...prev, [body._id]: false }));
+  };
+
+  // Approve claim handler (only reporter)
+  const handleApprove = async (body) => {
+    setStatusUpdating((prev) => ({ ...prev, [body._id]: true }));
+    try {
+      const res = await fetch(`${API_BASE}/api/register/${body._id}/approve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      if (res.ok) {
+        // Remove from UI
+        setBodies((prev) => prev.filter((b) => b._id !== body._id));
+      }
+    } catch (err) {}
     setStatusUpdating((prev) => ({ ...prev, [body._id]: false }));
   };
 
@@ -163,21 +185,56 @@ function SearchDeadBody() {
                   </div>
                 )}
                 <p className="card-text mb-1"><b>Reported At:</b> {new Date(body.createdAt).toLocaleString()}</p>
-                <button
-                  className={`btn me-2 ${body.status === "unclaimed" ? "btn-danger" : "btn-warning"}`}
-                  style={{
-                    backgroundColor: body.status === "unclaimed" ? '#8B2323' : '#ffc107',
-                    color: body.status === "unclaimed" ? '#fff' : '#000',
-                    border: 'none',
-                    minWidth: '140px',
-                    fontWeight: 'bold',
-                    fontSize: '1.2rem'
-                  }}
-                  disabled={statusUpdating[body._id]}
-                  onClick={() => handleStatusUpdate(body)}
-                >
-                  {statusUpdating[body._id] ? "Updating..." : body.status}
-                </button>
+                {/* Claim/Pending/Approve Button Logic */}
+
+                {body.status === "unclaimed" ? (
+                  <button
+                    className="btn btn-danger me-2"
+                    style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
+                    disabled={statusUpdating[body._id] || !user}
+                    onClick={() => handleClaimRequest(body)}
+                  >
+                    {statusUpdating[body._id] ? "Requesting..." : "Claim"}
+                  </button>
+                ) : body.status === "pending" ? (
+                  (() => {
+                    const claimRequests = Array.isArray(body.claimRequests) ? body.claimRequests : [];
+                    const userName = user?.fullName || user?.name || "";
+                    if (claimRequests.includes(userName)) {
+                      return (
+                        <button
+                          className="btn btn-warning me-2"
+                          style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
+                          disabled
+                        >
+                          Pending (You)
+                        </button>
+                      );
+                    } else {
+                      return (
+                        <button
+                          className="btn btn-warning me-2"
+                          style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
+                          disabled
+                        >
+                          Pending
+                        </button>
+                      );
+                    }
+                  })()
+                ) : null}
+
+                {/* Approve button for reporter if there are claim requests */}
+                {body.status === "pending" && user && (body.reporter === user.fullName || body.reporter === user.name) && Array.isArray(body.claimRequests) && body.claimRequests.length > 0 && (
+                  <button
+                    className="btn btn-success me-2"
+                    style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
+                    disabled={statusUpdating[body._id]}
+                    onClick={() => handleApprove(body)}
+                  >
+                    {statusUpdating[body._id] ? "Approving..." : "Approve & Remove"}
+                  </button>
+                )}
                 <button className="btn btn-primary" onClick={() => {
                   setContactNumber(body.reporterContact || "Not available");
                   setShowContact(true);

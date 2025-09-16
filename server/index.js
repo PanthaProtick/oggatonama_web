@@ -57,7 +57,7 @@ cloudinary.config({
 // Middleware
 app.use(cors({
   origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], // Allow both localhost and 127.0.0.1
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
@@ -104,6 +104,10 @@ const RegisterSchema = new mongoose.Schema({
     enum: ['unclaimed', 'pending', 'claimed'],
     default: 'unclaimed',
     required: true
+  },
+  claimRequests: {
+    type: [String], // Array of user names who want to claim
+    default: []
   },
   createdAt: { type: Date, default: Date.now },
 });
@@ -642,30 +646,39 @@ app.get("/api/register/:id", async (req, res) => {
   }
 });
 
-// Update status of a register entry
-app.patch("/api/register/:id/status", async (req, res) => {
+
+// User requests to claim an entry (adds to claimRequests and sets status to pending)
+app.patch("/api/register/:id/claim", authenticateToken, async (req, res) => {
   try {
-    const { status } = req.body;
-    console.log(`[PATCH] /api/register/${req.params.id}/status called.`);
-    console.log('Request params:', req.params);
-    console.log('Request body:', req.body);
-    if (!['unclaimed', 'pending', 'claimed'].includes(status)) {
-      console.log('Invalid status value:', status);
-      return res.status(400).json({ error: "Invalid status value" });
+    const entry = await Register.findById(req.params.id);
+    if (!entry) return res.status(404).json({ error: "Entry not found" });
+    const userName = req.user?.fullName || req.user?.name || "Unknown";
+    if (entry.claimRequests.includes(userName)) {
+      return res.status(400).json({ error: "You have already requested to claim this entry." });
     }
-    const entry = await Register.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
-    if (!entry) {
-      console.log('Entry not found for ID:', req.params.id);
-      return res.status(404).json({ error: "Entry not found" });
-    }
-    console.log('MongoDB update result:', entry);
-    res.json({ message: "Status updated", entry });
+    entry.claimRequests.push(userName);
+    entry.status = "pending";
+    await entry.save();
+    res.json({ message: "Claim request submitted", entry });
   } catch (err) {
-    console.error('Error in PATCH /api/register/:id/status:', err);
+    console.error('Error in PATCH /api/register/:id/claim:', err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Reporter approves a claim (deletes entry if approved)
+app.post("/api/register/:id/approve", authenticateToken, async (req, res) => {
+  try {
+    const entry = await Register.findById(req.params.id);
+    if (!entry) return res.status(404).json({ error: "Entry not found" });
+    const userName = req.user?.fullName || req.user?.name || "Unknown";
+    if (entry.reporter !== userName) {
+      return res.status(403).json({ error: "Only the reporter can approve this claim." });
+    }
+    await Register.findByIdAndDelete(req.params.id);
+    res.json({ message: "Entry approved and deleted." });
+  } catch (err) {
+    console.error('Error in POST /api/register/:id/approve:', err);
     res.status(500).json({ error: "Server error" });
   }
 });
