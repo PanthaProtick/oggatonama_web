@@ -1,10 +1,14 @@
+
 import React, { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
+import { useAuth } from "../contexts/AuthContext";
 import "./css/RegisterBody.css";
 
 function SearchDeadBody() {
   const [showContact, setShowContact] = useState(false);
   const [contactNumber, setContactNumber] = useState("");
+  const [statusUpdating, setStatusUpdating] = useState({});
+  const { user, token } = useAuth();
   const divisionDistricts = {
     Barishal: ["Barguna", "Barishal", "Bhola", "Jhalokati", "Patuakhali", "Pirojpur"],
     Chittagong: ["Bandarban", "Brahmanbaria", "Chandpur", "Chittagong", "Comilla", "Cox's Bazar", "Feni", "Khagrachhari", "Lakshmipur", "Noakhali", "Rangamati"],
@@ -24,11 +28,13 @@ function SearchDeadBody() {
   const [age, setAge] = useState("All");
   const ageIntervals = ["All", ...Array.from({length: 10}, (_, i) => `${i*10}-${i*10+9}`)];
 
+  const API_BASE = "http://localhost:5000";
   const fetchBodies = () => {
     setLoading(true);
-  fetch("http://localhost:5000/api/register?ts=" + Date.now()) // prevent cache
+    fetch(`${API_BASE}/api/register?ts=${Date.now()}`)
       .then((res) => res.json())
       .then((data) => {
+        console.log("[DEBUG] Bodies fetched:", data);
         setBodies(data);
         setLoading(false);
       })
@@ -62,6 +68,51 @@ function SearchDeadBody() {
     return divisionMatch && districtMatch && ageMatch;
   });
 
+
+  // Claim request handler
+  const handleClaimRequest = async (body) => {
+    setStatusUpdating((prev) => ({ ...prev, [body._id]: true }));
+    try {
+      console.log("[DEBUG] Sending claim request for:", body._id, "as user:", user?.fullName || user?.name);
+      const res = await fetch(`${API_BASE}/api/register/${body._id}/claim`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      const result = await res.json();
+      console.log("[DEBUG] Claim response:", result);
+      if (res.ok) {
+        fetchBodies();
+      } else {
+        alert(result.error || "Claim failed");
+      }
+    } catch (err) {
+      console.error("[DEBUG] Claim request error:", err);
+    }
+    setStatusUpdating((prev) => ({ ...prev, [body._id]: false }));
+  };
+
+  // Approve claim handler (only reporter)
+  const handleApprove = async (body) => {
+    setStatusUpdating((prev) => ({ ...prev, [body._id]: true }));
+    try {
+      const res = await fetch(`${API_BASE}/api/register/${body._id}/approve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      if (res.ok) {
+        // Remove from UI
+        setBodies((prev) => prev.filter((b) => b._id !== body._id));
+      }
+    } catch (err) {}
+    setStatusUpdating((prev) => ({ ...prev, [body._id]: false }));
+  };
+
   return (
     <div className="register-page">
       <Navbar />
@@ -71,7 +122,6 @@ function SearchDeadBody() {
           <button className="btn btn-secondary" onClick={fetchBodies} style={{height:'40px'}}>Refresh</button>
         </div>
         <hr className="register-divider mb-4" />
-
         {/* Filters */}
         <div className="mb-3">
           <label className="form-label">Filter by Division</label>
@@ -98,7 +148,6 @@ function SearchDeadBody() {
             ))}
           </select>
         </div>
-
         {/* Body List */}
         {loading ? (
           <div className="text-center text-light">Loading...</div>
@@ -136,7 +185,59 @@ function SearchDeadBody() {
                   </div>
                 )}
                 <p className="card-text mb-1"><b>Reported At:</b> {new Date(body.createdAt).toLocaleString()}</p>
-                <button className="btn btn-danger me-2">Unclaimed</button>
+                {/* Claim/Pending/Approve Button Logic */}
+
+                {(() => {
+                  const claimRequests = Array.isArray(body.claimRequests) ? body.claimRequests : [];
+                  const userName = user?.fullName || user?.name || "";
+                  // Hide claim button for reporter and for users who have already claimed
+                  if (user && body.reporter !== userName && !claimRequests.includes(userName)) {
+                    return (
+                      <button
+                        className="btn btn-danger me-2"
+                        style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
+                        disabled={statusUpdating[body._id]}
+                        onClick={() => handleClaimRequest(body)}
+                      >
+                        {statusUpdating[body._id] ? "Requesting..." : "Claim"}
+                      </button>
+                    );
+                  } else if (user && claimRequests.includes(userName)) {
+                    return (
+                      <button
+                        className="btn btn-warning me-2"
+                        style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
+                        disabled
+                      >
+                        Pending (You)
+                      </button>
+                    );
+                  } else if (body.status === "pending" && claimRequests.length > 0) {
+                    return (
+                      <button
+                        className="btn btn-warning me-2"
+                        style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
+                        disabled
+                      >
+                        Pending
+                      </button>
+                    );
+                  } else {
+                    return null;
+                  }
+                })()}
+
+                {/* Approve button for reporter if there are claim requests */}
+                {body.status === "pending" && user && (body.reporter === user.fullName || body.reporter === user.name) && Array.isArray(body.claimRequests) && body.claimRequests.length > 0 && (
+                  <button
+                    className="btn btn-success me-2"
+                    style={{ minWidth: '140px', fontWeight: 'bold', fontSize: '1.2rem' }}
+                    disabled={statusUpdating[body._id]}
+                    onClick={() => handleApprove(body)}
+                  >
+                    {statusUpdating[body._id] ? "Approving..." : "Approve & Remove"}
+                  </button>
+                )}
                 <button className="btn btn-primary" onClick={() => {
                   setContactNumber(body.reporterContact || "Not available");
                   setShowContact(true);
@@ -145,20 +246,20 @@ function SearchDeadBody() {
             </div>
           ))
         )}
-      {/* Contact Popup */}
-      {showContact && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-          background: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 9999
-        }}>
+        {/* Contact Popup */}
+        {showContact && (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999
+          }}>
             <div style={{
               background: "#4B1E1E", // dark brown
               color: "#fff",
@@ -168,12 +269,12 @@ function SearchDeadBody() {
               minWidth: "320px",
               textAlign: "center"
             }}>
-            <h4 style={{marginBottom: "16px"}}>Reporter Contact Number</h4>
-            <div style={{fontSize: "1.3rem", fontWeight: "bold", marginBottom: "24px"}}>{contactNumber}</div>
-            <button className="btn btn-danger" onClick={() => setShowContact(false)}>Close</button>
+              <h4 style={{marginBottom: "16px"}}>Reporter Contact Number</h4>
+              <div style={{fontSize: "1.3rem", fontWeight: "bold", marginBottom: "24px"}}>{contactNumber}</div>
+              <button className="btn btn-danger" onClick={() => setShowContact(false)}>Close</button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );

@@ -57,7 +57,7 @@ cloudinary.config({
 // Middleware
 app.use(cors({
   origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], // Allow both localhost and 127.0.0.1
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
@@ -99,6 +99,16 @@ const RegisterSchema = new mongoose.Schema({
   photo: String,
   reporter: String, // New field for reporter's name
   reporterContact: String, // New field for reporter's contact number
+  status: {
+    type: String,
+    enum: ['unclaimed', 'pending', 'claimed'],
+    default: 'unclaimed',
+    required: true
+  },
+  claimRequests: {
+    type: [String], // Array of user names who want to claim
+    default: []
+  },
   createdAt: { type: Date, default: Date.now },
 });
 const Register = mongoose.model("Register", RegisterSchema);
@@ -266,6 +276,7 @@ app.post("/api/register", authenticateToken, upload.single("photo"), async (req,
       photo: photoUrl, // Store Cloudinary URL instead of local path
       reporter: reporterName,
       reporterContact,
+      status: 'unclaimed', // Default status
     });
     
     console.log("💾 About to save to database:", {
@@ -631,6 +642,43 @@ app.get("/api/register/:id", async (req, res) => {
     }
     res.json(entry);
   } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+// User requests to claim an entry (adds to claimRequests and sets status to pending)
+app.patch("/api/register/:id/claim", authenticateToken, async (req, res) => {
+  try {
+    const entry = await Register.findById(req.params.id);
+    if (!entry) return res.status(404).json({ error: "Entry not found" });
+    const userName = req.user?.fullName || req.user?.name || "Unknown";
+    if (entry.claimRequests.includes(userName)) {
+      return res.status(400).json({ error: "You have already requested to claim this entry." });
+    }
+    entry.claimRequests.push(userName);
+    entry.status = "pending";
+    await entry.save();
+    res.json({ message: "Claim request submitted", entry });
+  } catch (err) {
+    console.error('Error in PATCH /api/register/:id/claim:', err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Reporter approves a claim (deletes entry if approved)
+app.post("/api/register/:id/approve", authenticateToken, async (req, res) => {
+  try {
+    const entry = await Register.findById(req.params.id);
+    if (!entry) return res.status(404).json({ error: "Entry not found" });
+    const userName = req.user?.fullName || req.user?.name || "Unknown";
+    if (entry.reporter !== userName) {
+      return res.status(403).json({ error: "Only the reporter can approve this claim." });
+    }
+    await Register.findByIdAndDelete(req.params.id);
+    res.json({ message: "Entry approved and deleted." });
+  } catch (err) {
+    console.error('Error in POST /api/register/:id/approve:', err);
     res.status(500).json({ error: "Server error" });
   }
 });
