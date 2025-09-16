@@ -41,9 +41,13 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const updateUser = (userData) => {
+  const updateUser = (userData, newToken) => {
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
+    if (newToken) {
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+    }
   };
 
   const isAuthenticated = () => {

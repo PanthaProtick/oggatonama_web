@@ -10,7 +10,7 @@ const { v2: cloudinary } = require("cloudinary");
 const nodemailer = require("nodemailer");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // JWT Secret - Add this to your .env file: JWT_SECRET=your_secret_key_here
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_key_change_in_production";
@@ -253,8 +253,10 @@ app.post("/api/register", authenticateToken, upload.single("photo"), async (req,
       }
     }
     
-    const reporterName = req.user?.fullName || req.user?.name || "Unknown";
-    const reporterContact = req.user?.contactNumber || "";
+
+    // Use reporter info from form if present, else fallback to token
+    const reporterName = req.body.reporter || req.user?.fullName || req.user?.name || "Unknown";
+    const reporterContact = req.body.reporterContact || req.user?.contactNumber || "";
     const newRegister = new Register({
       foundLocation,
       age: parseInt(age), // Ensure age is a number
@@ -588,9 +590,20 @@ app.put("/api/profile", authenticateToken, upload.single("profilePhoto"), async 
       { new: true }
     ).select('-password');
     
+
+    // Generate a new JWT token with updated user info
+    const newToken = jwt.sign({
+      userId: updatedUser._id,
+      fullName: updatedUser.fullName,
+      email: updatedUser.email,
+      contactNumber: updatedUser.contactNumber,
+      profilePhoto: updatedUser.profilePhoto
+    }, JWT_SECRET, { expiresIn: '7d' });
+
     res.json({
       message: "Profile updated successfully",
-      user: updatedUser
+      user: updatedUser,
+      token: newToken
     });
     
   } catch (err) {
@@ -620,6 +633,18 @@ app.get("/api/register/:id", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
+});
+
+
+// Catch-all 404 handler (always returns JSON)
+app.use((req, res, next) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Catch-all error handler (always returns JSON)
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error', details: err.message });
 });
 
 app.listen(PORT, () => {
