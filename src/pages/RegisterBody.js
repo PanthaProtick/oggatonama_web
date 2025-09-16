@@ -1,11 +1,13 @@
 import React, { useState } from "react";
+// import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Navbar from "../components/Navbar";
 import "./css/RegisterBody.css";
 
 
 function RegisterBody() {
-  const { token } = useAuth();
+  // const navigate = useNavigate();
+  const { token, user } = useAuth();
   const divisionDistricts = {
     Barishal: ["Barguna", "Barishal", "Bhola", "Jhalokati", "Patuakhali", "Pirojpur"],
     Chittagong: ["Bandarban", "Brahmanbaria", "Chandpur", "Chittagong", "Comilla", "Cox's Bazar", "Feni", "Khagrachhari", "Lakshmipur", "Noakhali", "Rangamati"],
@@ -61,10 +63,13 @@ function RegisterBody() {
         : form.heightInch
           ? `0'${form.heightInch}"`
           : "";
+    // Use the latest user info from context
     const submitForm = {
       ...form,
       foundLocation,
       height,
+      reporter: user?.fullName || user?.name || "Unknown",
+      reporterContact: user?.contactNumber || "",
     };
     delete submitForm.division;
     delete submitForm.district;
@@ -79,7 +84,7 @@ function RegisterBody() {
       });
       if (photo) formData.append("photo", photo);
 
-      const res = await fetch("http://localhost:5000/api/register", {
+  const res = await fetch("http://localhost:5000/api/register", {
         method: "POST",
         body: formData,
         headers: {
@@ -88,11 +93,12 @@ function RegisterBody() {
       });
 
       if (res.ok) {
-        setSuccess("Registration successful!");
+        setSuccess("Registration successful! Go to the Search page to see your report.");
         setForm({ division: "", district: "", exactLocation: "", age: "", gender: "", heightFeet: "", heightInch: "", clothing: "" });
         setPhoto(null);
         const fileInput = document.querySelector('input[type="file"]');
         if (fileInput) fileInput.value = '';
+        // No redirect, let user go to search page manually
       } else {
         const data = await res.json();
         setError(data.error || "Registration failed");
@@ -110,7 +116,6 @@ function RegisterBody() {
       <div className="container py-5">
         <h1 className="text-center text-light mb-4 register-title">Register a Dead Body</h1>
         <hr className="register-divider mb-4" />
-
         <div className="card register-card mx-auto">
           <form onSubmit={handleSubmit}>
             <div className="mb-3">

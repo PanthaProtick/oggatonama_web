@@ -24,8 +24,9 @@ function SearchDeadBody() {
   const [age, setAge] = useState("All");
   const ageIntervals = ["All", ...Array.from({length: 10}, (_, i) => `${i*10}-${i*10+9}`)];
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/register")
+  const fetchBodies = () => {
+    setLoading(true);
+  fetch("http://localhost:5000/api/register?ts=" + Date.now()) // prevent cache
       .then((res) => res.json())
       .then((data) => {
         setBodies(data);
@@ -35,6 +36,9 @@ function SearchDeadBody() {
         setError("Failed to fetch data");
         setLoading(false);
       });
+  };
+  useEffect(() => {
+    fetchBodies();
   }, []);
 
   // Filter logic (division, district, and age interval)
@@ -62,7 +66,10 @@ function SearchDeadBody() {
     <div className="register-page">
       <Navbar />
       <div className="container py-5">
-        <h1 className="text-center text-light mb-4 register-title">Claim Reported Bodies</h1>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <h1 className="text-light mb-4 register-title">Claim Reported Bodies</h1>
+          <button className="btn btn-secondary" onClick={fetchBodies} style={{height:'40px'}}>Refresh</button>
+        </div>
         <hr className="register-divider mb-4" />
 
         {/* Filters */}

@@ -63,7 +63,7 @@ function SignUp() {
       }
 
       console.log('📤 Sending request to signup API...');
-      const response = await fetch('http://localhost:5000/api/signup', {
+  const response = await fetch('http://localhost:5000/api/signup', {
         method: 'POST',
         body: submitData
       });
@@ -77,7 +77,7 @@ function SignUp() {
         
         // Auto-signin the user after successful registration
         // Generate a login token by calling signin API
-        const signinResponse = await fetch('http://localhost:5000/api/signin', {
+  const signinResponse = await fetch('http://localhost:5000/api/signin', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
