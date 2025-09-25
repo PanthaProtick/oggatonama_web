@@ -1,0 +1,54 @@
+.carbon-widget {
+  min-height: 80px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.carbon-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.carbon-metric {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #28a745;
+}
+
+.carbon-status {
+  font-size: 0.7rem;
+  padding: 0.4em 0.6em;
+  font-weight: bold;
+}
+
+.carbon-details {
+  font-size: 0.8rem;
+}
+
+.carbon-widget .card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.carbon-widget .card-body {
+  padding: 1.2rem;
+}
+
+@media (max-width: 768px) {
+  .carbon-widget {
+    margin-bottom: 20px;
+    max-width: 100%;
+  }
+  
+  .carbon-metric {
+    font-size: 1.1rem;
+  }
+  
+  .carbon-widget .card-body {
+    padding: 1rem;
+  }
+}

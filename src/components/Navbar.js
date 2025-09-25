@@ -61,6 +61,16 @@ function Navbar() {
             {isAuthenticated() && (
               <li className="nav-item">
                 <Link
+                  className={`nav-link ${location.pathname === "/carbon" ? "active" : ""}`}
+                  to="/carbon"
+                >
+                  🌱 Carbon
+                </Link>
+              </li>
+            )}
+            {isAuthenticated() && (
+              <li className="nav-item">
+                <Link
                   className={`nav-link ${location.pathname === "/profile" ? "active" : ""}`}
                   to="/profile"
                 >

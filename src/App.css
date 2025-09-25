@@ -16,3 +16,36 @@
   letter-spacing: 0.5px;
 }
 
+/* Challenge Section Styles */
+.challenge-section {
+  position: relative;
+}
+
+.challenge-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1e1e1e 100%);
+  z-index: -1;
+}
+
+/* Card improvements for dark theme */
+.card.bg-dark {
+  border: 1px solid #495057;
+  transition: all 0.3s ease;
+}
+
+.card.bg-dark:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  border-color: #6c757d;
+}
+
+/* Ensure smooth transitions across the app */
+* {
+  scroll-behavior: smooth;
+}
+

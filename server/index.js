@@ -8,6 +8,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v2: cloudinary } = require("cloudinary");
 const nodemailer = require("nodemailer");
+const { carbonTrackingMiddleware, getCarbonStats } = require("./carbonTracker-simplified");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -70,6 +71,9 @@ app.use((req, res, next) => {
   console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
   next();
 });
+
+// Carbon tracking middleware
+app.use(carbonTrackingMiddleware);
 
 // MongoDB Connection
 console.log("Attempting to connect to MongoDB...");
@@ -189,6 +193,34 @@ app.get("/api/test", (req, res) => {
     message: "Backend is working!",
     timestamp: new Date().toISOString(),
   });
+});
+
+// Carbon testing endpoint - generates sample data for testing
+app.get("/api/carbon/test-data", (req, res) => {
+  const sampleData = {
+    message: "Carbon tracking test endpoint",
+    timestamp: new Date().toISOString(),
+    testData: {
+      largeArray: Array.from({length: 100}, (_, i) => ({
+        id: i,
+        name: `Test Item ${i}`,
+        description: `This is a test item with ID ${i} designed to create a larger response payload for carbon emission testing`,
+        metadata: {
+          created: new Date().toISOString(),
+          category: `Category ${i % 5}`,
+          tags: [`tag${i}`, `test`, `carbon-tracking`]
+        }
+      })),
+      statistics: {
+        totalItems: 100,
+        categories: 5,
+        averageSize: "Approximately 200 bytes per item",
+        purpose: "Testing carbon emission tracking with larger payloads"
+      }
+    }
+  };
+  
+  res.json(sampleData);
 });
 
 // Email configuration test endpoint
@@ -681,6 +713,116 @@ app.post("/api/register/:id/approve", authenticateToken, async (req, res) => {
     console.error('Error in POST /api/register/:id/approve:', err);
     res.status(500).json({ error: "Server error" });
   }
+});
+
+// Carbon Emission API Endpoints
+
+// Get carbon emission statistics
+app.get("/api/carbon/stats", async (req, res) => {
+  try {
+    const timeframe = req.query.timeframe || '24h';
+    const stats = await getCarbonStats(timeframe);
+    
+    if (!stats) {
+      return res.status(500).json({ error: "Failed to retrieve carbon statistics" });
+    }
+    
+    res.json({
+      success: true,
+      data: stats,
+      message: `Carbon emission statistics for the last ${timeframe}`
+    });
+  } catch (err) {
+    console.error('Error fetching carbon stats:', err);
+    res.status(500).json({ error: "Failed to fetch carbon emission data" });
+  }
+});
+
+// Debug endpoint to check carbon data in database
+app.get("/api/carbon/debug", async (req, res) => {
+  try {
+    const { CarbonEmission } = require("./carbonTracker-simplified");
+    const count = await CarbonEmission.countDocuments();
+    const recent = await CarbonEmission.find().sort({ timestamp: -1 }).limit(5);
+    
+    res.json({
+      message: "Carbon database debug info",
+      totalRecords: count,
+      recentRecords: recent,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Clear all carbon emission data (for testing purposes)
+app.delete("/api/carbon/clear", async (req, res) => {
+  try {
+    const { CarbonEmission } = require("./carbonTracker-simplified");
+    const result = await CarbonEmission.deleteMany({});
+    
+    console.log(`[CARBON CLEAR] Deleted ${result.deletedCount} carbon emission records`);
+    
+    res.json({
+      success: true,
+      message: "All carbon emission data cleared",
+      deletedCount: result.deletedCount,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("[CARBON CLEAR] Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get real-time carbon emission data
+app.get("/api/carbon/realtime", async (req, res) => {
+  try {
+    const stats = await getCarbonStats('1h');
+    const currentEmission = stats ? stats.co2PerRequest : 0;
+    
+    res.json({
+      success: true,
+      data: {
+        currentEmissionPerRequest: currentEmission,
+        status: currentEmission < 1 ? "low" : currentEmission < 5 ? "moderate" : "high",
+        lastHourTotal: stats ? stats.totalCO2Grams : 0,
+        requestsLastHour: stats ? stats.totalRequests : 0
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching real-time carbon data:', err);
+    res.status(500).json({ error: "Failed to fetch real-time carbon data" });
+  }
+});
+
+// Carbon testing endpoint - generates sample data for testing
+app.get("/api/carbon/test-data", (req, res) => {
+  const sampleData = {
+    message: "Carbon tracking test endpoint",
+    timestamp: new Date().toISOString(),
+    testData: {
+      largeArray: Array.from({length: 100}, (_, i) => ({
+        id: i,
+        name: `Test Item ${i}`,
+        description: `This is a test item with ID ${i} designed to create a larger response payload for carbon emission testing`,
+        metadata: {
+          created: new Date().toISOString(),
+          category: `Category ${i % 5}`,
+          tags: [`tag${i}`, `test`, `carbon-tracking`]
+        }
+      })),
+      statistics: {
+        totalItems: 100,
+        categories: 5,
+        averageSize: "Approximately 200 bytes per item",
+        purpose: "Testing carbon emission tracking with larger payloads"
+      }
+    }
+  };
+  
+  res.json(sampleData);
 });
 
 

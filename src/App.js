@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import RegisterBody from "./pages/RegisterBody";
 import SearchDeadBody from "./pages/SearchDeadBody";
+import CarbonDashboard from "./pages/CarbonDashboard";
 
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
@@ -44,6 +45,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <SearchDeadBody />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/carbon" 
+            element={
+              <ProtectedRoute>
+                <CarbonDashboard />
               </ProtectedRoute>
             } 
           />
